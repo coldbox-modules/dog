@@ -1,0 +1,17 @@
+{
+    "name":"Delivery Observation Gadget",
+    "version":"0.4.0",
+    "author":"Jeff Stevens",
+    "slug":"dog",
+    "type":"modules",
+    "keywords":[
+        "shipping",
+        "api",
+        "fedex",
+        "ups",
+        "tracking"
+    ],
+    "installPaths":{
+        "dog":"modules"
+    }
+}
