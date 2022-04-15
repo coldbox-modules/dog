@@ -8,7 +8,7 @@ looks like this:
 
 
 ```
-property name="dog"     inject="dog@deliveryObservationGadget";
+property name="dog"     inject="deliveryObservationGadget@dog";
 trackingInformation = dog.fetch("fedex", "403934084723025", "struct");
 ```
 
