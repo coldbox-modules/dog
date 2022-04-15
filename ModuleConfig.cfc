@@ -13,15 +13,18 @@ component
 	function configure(){
 		// Module Settings
 		settings = {
-			fedexApiKey :           "insertYourCredentialsHere",
-			fedexPassword :         "insertYourCredentialsHere",
-			fedexAccountNumber :    "insertYourCredentialsHere",
-			fedexMeterNumber :      "insertYourCredentialsHere",
-			upsApiKey :             "insertYourCredentialsHere",
-			upsUsername :           "insertYourCredentialsHere",
-			upsPassword :           "insertYourCredentialsHere",
-      aftershipApiKey :       "insertYourCredentialsHere",
-			daytonFreightBasicAuth :"insertYourCredentialsHere"
+			fedexApiKey : "insertYourCredentialsHere",
+			fedexPassword : "insertYourCredentialsHere",
+			fedexAccountNumber : "insertYourCredentialsHere",
+			fedexMeterNumber : "insertYourCredentialsHere",
+			upsApiKey : "insertYourCredentialsHere",
+			upsUsername : "insertYourCredentialsHere",
+			upsPassword : "insertYourCredentialsHere",
+      aftershipApiKey : "insertYourCredentialsHere",
+			daytonFreightBasicAuth : "insertYourCredentialsHere",
+      XPOLogisticsAccessToken : "insertYourCredentialsHere",
+      XPOLogisticsUserId : "insertYourCredentialsHere",
+      XPOLogisticsPassword : "insertYourCredentialsHere"
 		};   
 	}
 
