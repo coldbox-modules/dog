@@ -202,7 +202,7 @@ If you pass in "structure", "json", or "xml":
 
 
 ### Service-specific function calls for fetch
-Note well that you may also directly accees the fetch functions for certain APIs if you
+Note well that you may also directly access the fetch functions for certain APIs if you
 do not wish to use the general fetch function. These are listed below:
 
 ```
