@@ -23,7 +23,7 @@ DOG can provide tracking information from the following services:
 -Holland Frieght
 -YRC Freight
 
-VERSION 0.5.1
+VERSION 0.5.2
 	-API clients still under construction: R+L Carriers, Aftership, XPO Logistics
 
 
