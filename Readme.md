@@ -17,6 +17,7 @@ Shipment 403934084723025's tracking information is returned by the dog object's
 fetch method.
 
 DOG can provide tracking information from the following services:
+
 -FedEx
 
 -UPS
@@ -28,8 +29,10 @@ DOG can provide tracking information from the following services:
 -YRC Freight
 
 
+
 VERSION 0.5.2
 	-API clients still under construction: R+L Carriers, Aftership, XPO Logistics
+
 
 
 ### Installation
