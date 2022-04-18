@@ -18,10 +18,15 @@ fetch method.
 
 DOG can provide tracking information from the following services:
 -FedEx
+
 -UPS
+
 -Dayton Freight
+
 -Holland Frieght
+
 -YRC Freight
+
 
 VERSION 0.5.2
 	-API clients still under construction: R+L Carriers, Aftership, XPO Logistics
