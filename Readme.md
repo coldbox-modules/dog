@@ -93,7 +93,7 @@ moduleSettings = {
 					fedexMeterNumber : "254951074",
 					upsApiKey : "2DAF689CA6B3621A",
 					upsUsername : "js.loebelectric",
-					upsPassword : "44RXwsA(;?D!""4n",
+					upsPassword : "AWFvN/DuHr2a^9i",
 					uspsUserId : "707LOEBE5745",
 					uspsPassword : "592VS73QE446",
 					aftershipApiKey : "e876739c-2406-4125-b1c6-4fd147284547",
