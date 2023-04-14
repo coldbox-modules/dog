@@ -83,28 +83,6 @@ Aftership: https://developers.aftership.com/reference/get-trackings
 XPO Logistics: https://ltl-solutions.xpo.com/help-center/api/
 
 
-***
-These are the credentials I made for myself to test the APIS, formatted as they were in the module settings of a coldbox app:
-moduleSettings = {
-			dog = {
-					fedexApiKey : "HJaqE92zapQKq8vz",
-					fedexPassword : "7fwMiJevt15iB6mvXlWhkdGuJ",
-					fedexAccountNumber : "427394417",
-					fedexMeterNumber : "254951074",
-					upsApiKey : "2DAF689CA6B3621A",
-					upsUsername : "js.loebelectric",
-					upsPassword : "AWFvN/DuHr2a^9i",
-					uspsUserId : "707LOEBE5745",
-					uspsPassword : "592VS73QE446",
-					aftershipApiKey : "e876739c-2406-4125-b1c6-4fd147284547",
-					daytonFreightBasicAuth : "Basic ai5zdGV2ZW5zOk5xWkgyVHNYRjZEQkxxYQ==",
-				}
-		};
-***
-
-
-
-
 # User Guide
 
 To use dog, simply inject it into one of your scripts with the following code:
