@@ -25,7 +25,7 @@ component
       XPOLogisticsAccessToken : "insertYourCredentialsHere",
       XPOLogisticsUserId : "insertYourCredentialsHere",
       XPOLogisticsPassword : "insertYourCredentialsHere"
-		};   
+		};
 	}
 
     function onLoad(){

@@ -1,7 +1,7 @@
 /**
  * A model used to communicate with shipping service APIs and retrieve information from them in the format
  * of your choice.
- * 
+ *
  * The following is the list of Dog's supported APIS:
  * - FedEx
  * - UPS
@@ -35,26 +35,29 @@ component
     //RLC information
 
     //Aftership Information (Tazmanian Freight)
-    property name="aftershipApiKey"       inject="coldbox:setting:aftershipApiKey@dog"; 
-    
+    property name="aftershipApiKey"       inject="coldbox:setting:aftershipApiKey@dog";
+
     //XPO Logistics
     property name="XPOLogisticsAccessToken"     inject="coldbox:setting:XPOLogisticsAccessToken@dog";
     property name="XPOLogisticsUserId"          inject="coldbox:setting:XPOLogisticsUserId@dog";
-    property name="XPOLogisticsPassword"        inject="coldbox:setting:XPOLogisticsPassword@dog";                  
+    property name="XPOLogisticsPassword"        inject="coldbox:setting:XPOLogisticsPassword@dog";
 
 
     //Default constructor
     deliveryObservationGadget function init()
     {
+        //Holds the bearer and refresh tokens used with the XPO Logistics API
+        this.XPOLogisticsTokenStruct = {};
+
         return this;
     }
 
 
     /**
-     * Takes in an HTTP response and reads the status code. If it is 
+     * Takes in an HTTP response and reads the status code. If it is
      * within the error range (400 <= statusCode) and (600 > statusCode)
      * we return true. Otherwise return false.
-     * 
+     *
      * @response An HTTP response structure
      * @return A boolean variable indicating whether the response had an error or not
      */
@@ -66,7 +69,7 @@ component
         }
         else
         {
-            return false;    
+            return false;
         }
     }
 
@@ -87,8 +90,7 @@ component
      *              -FDXE: FedEx Express
      *              -FDXS: FedEx Smartpost
      *              -FDCC: FedEx Custom Critical
-     *          
-     * 
+     *
      * @return The shipment information
      */
     public struct function fetchFedEx(required string shipment, string format = "standard", string carrierCode="FDXG")
@@ -101,7 +103,7 @@ component
         local.httpService.setUrl("https://ws.fedex.com:443/web-services/track"); //Endpoint for FedEx API (port 433 must be opened for bi-directional communication on the firewall)
 
         /* Create SOAP format API request */
-        local.fileContent = 
+        local.fileContent =
         "
         <soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns=""http://fedex.com/ws/track/v20"">
             <soapenv:Header/>
@@ -231,9 +233,11 @@ component
 
     /**
      * Given a UPS tracking number, returns the information of the shipment in the desired format.
-     * 
+     *
      * @shipment The tracking number of the shipment
-     * 
+     * @standard The format with which to return the tracking information. Standard is the only available
+     *           parameter for UPS.
+     *
      * @return The shipment information
      */
     public struct function fetchUPS(required string shipment, string format = "standard")
@@ -331,10 +335,10 @@ component
     /**
      * Given a tracking number from Dayton Freight, makes a request to their API
      * to return tracking information.
-     * 
+     *
      * Note that SSL is REQUIRED when using the Dayton Freight API. It will not work otherwise due
      * to the fact that credentials are sent on each request.
-     * 
+     *
      */
     public struct function fetchDaytonFreight(required string shipment, string format = "standard")
     {
@@ -389,19 +393,19 @@ component
             local.responseStruct["metadata"] = local.response;
             local.responseStruct["tracking"] = local.responseStructJSON;
             return local.responseStruct;
-        }   
+        }
         else if(arguments.format == "json")
         {
             local.responseStruct["metadata"] = local.response;
             local.responseStruct["tracking"] = local.response.filecontent;
             return local.responseStruct;
-        }   
+        }
         else if(arguments.format == "xml")
         {
             local.responseStruct["metadata"] = local.response;
             local.responseStruct["tracking"] = formatter.JSONtoXML(local.response.filecontent);
             return local.responseStruct;
-        }  
+        }
         else
         {
             return {"error" : "The service you requested to fetch shipping information from was not found or is unsupported"};
@@ -413,9 +417,9 @@ component
     /**
      * Given a tracking number from R+L carriers, makes a request to their API
      * to return tracking information.
-     * 
-     * Ask Vickie about this one!!!!
-     * 
+     *
+     * Ask Alyssa about this one!!!!
+     *
      */
     private struct function fetchRLC(required string shipment, string format = "standard")
     {
@@ -441,13 +445,13 @@ component
     }
 
     /**
-     * Given a Holland freight tracking number, makes a request to their API 
+     * Given a Holland freight tracking number, makes a request to their API
      * to return tracking information.
-     * 
-     * N.B. It appears that using the tracking numbers that look like 607-461842-4 for Holland Freight's non-public API 
+     *
+     * N.B. It appears that using the tracking numbers that look like 607-461842-4 for Holland Freight's non-public API
      * (which is literally the same endpoint with the addition of another variable in the queryString that looks like '?accessKey=XXXXXX')
      * is not retrieving tracking information. For now, DOG will remain a client for the public Holland API.
-     * 
+     *
      * @shipment The tracking number of the shipment
      * @format The format with which to return the API response
      * @return The tracking information of the shipment
@@ -531,10 +535,10 @@ component
     /**
      * Given a YRC tracking number, makes a request to their API to return tracking
      * information.
-     * 
-     * Currently using the public webservice. The non-public and public API tracking guides which appear on the 
+     *
+     * Currently using the public webservice. The non-public and public API tracking guides which appear on the
      * YRC website appear the same, so we're just sticking with the public one.
-     * 
+     *
      * @shipment The tracking number of the shipment
      * @format The format with which to return the API response
      * @return The tracking information of the shipment
@@ -681,9 +685,9 @@ component
     /**
      * Retrieve tracking information from aftership (Tazmanian freight) //This is untested. We ought to check it out once we find some Taz freight numbers.
      *
-     * @service 
-     * @shipment 
-     * @format 
+     * @service
+     * @shipment
+     * @format
      */
     private struct function fetchAftership(required string shipment, string format = "standard")
     {
@@ -747,22 +751,26 @@ component
         }
     }
 
-    
+
     /**
+     * TODO
      * Given an XPO Logistics tracking number, makes a request to their API to return
      * tracking information.
-     * 
+     *
      * https://ltl-solutions.xpo.com/help-center/api/
      * https://xpodotcom.azureedge.net/xpo/files/s8/Shipment_Tracking_API_Implementation_Guide.pdf
-     * 
-     * !!!!!!N.B. The bearer token expires 12 hours after creation, and the refresh token expires 24 hours after creation. We must detect expired tokens before we use them, and obtain new ones
+     *
+     * !!!!!!N.B. The bearer token expires 12 hours after creation, and the refresh token expires 24 hours after creation.
+     * We must detect expired tokens before we use them, and obtain new ones
      * all within this function to not create any more layers of complexity.
-     * 
+     *
+     * TODO Need to get token refreshing working correctly
+     *
      * @shipment The tracking number of the shipment
      * @format The format with which to return the API response
      * @return The tracking information of the shipment
      */
-    private struct function fetchXPOLogistics(required string shipment, string format = "standard")
+    public struct function fetchXPOLogistics(required string shipment, string format = "standard")
     {
         local.httpService = new http();
 
@@ -770,51 +778,92 @@ component
         local.httpService.setMethod("GET");
         local.httpService.setUrl("https://api.ltl.xpo.com/tracking/1.0/shipments/shipment-status-details?referenceNumbers=#arguments.shipment#");
 
-        if(session.XPOLogisiticsBearerToken != "")
+        //set a bad bearer and refresh token to see what response we get
+        //this.XPOLogisticsTokenStruct["XPOLogisticsBearerToken"] = "9b3d2998-cf7b-3c6a-b258-a6655cc13633";
+        //this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"] = "458f8b39-5c5e-3a7a-897c-debfe3b79349fw";
+
+        //Check to see if we need to get a bearer token to make some calls with XPO Logistics
+        //if(!this.XPOLogisticsTokenStruct.keyExists("XPOLogisticsBearerToken") || !this.XPOLogisticsTokenStruct.keyExists("XPOLogisticsRefreshToken"))
+        //{
+            //If the bearer/refresh token doesn't exist, we acquire one here
+            //Send a request to generate a new bearer token and refresh token with an access token
+            //This is usually done on the first call to the API, where no information regarding XPO logistics exists on the server
+            local.tokenService = new http();
+            local.tokenService.setMethod("POST");
+            local.tokenService.setUrl("https://api.ltl.xpo.com/token");
+            local.tokenService.addParam(type="header", name="Authorization", value=variables.XPOLogisticsAccessToken);
+            local.requestBody = "grant_type=password&username=#variables.XPOLogisticsUserId#&password=#variables.XPOLogisticsPassword#";
+            local.tokenService.addParam(type="body", name="body", value=local.requestBody);
+            local.tokenResponse = local.tokenService.send().getPrefix();
+            //Get the response from the bearer token creation request, storing the bearer and refresh tokens
+            local.responseContent = deserializeJSON(local.tokenResponse["filecontent"]);
+            this.XPOLogisticsTokenStruct["XPOLogisticsBearerToken"] = local.responseContent["access_token"];
+            this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"] = local.responseContent["refresh_token"];
+        //}
+
+        //Try to send a request and see if we get an expired token error.
+        while(true) //We loop here so we can try to send a request until we get no errors from potentially expired tokens
         {
-            //We have a bearer token, so we can move onto using the API
-        }
-        else
-        {
-            if(session.XPOLogisticsRefreshToken != "")
+            local.httpService.addParam(type="header", name="Authorization", value="Bearer " & this.XPOLogisticsTokenStruct["XPOLogisticsBearerToken"]);
+
+            /* Send the request to the XPO Logistics API */
+            local.response = local.httpService.send().getPrefix();
+            //writeDump(local.response);
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ///////////*            Account for possible errors          *////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            //Check status code, first of all
+            if(badResponseStatus(local.response))
             {
-                //Send a request to generate a new bearer token and refresh token with a refresh token
-                local.tokenService = new http();
-                local.tokenService.setMethod("");
-                local.tokenService.setUrl("");
+                //Check to see if no information was found on the supplied tracking number
+                if(local.response.fileContent.find("No data found for the Shipment Reference Number/s"))
+                {
+                    return {    "success" : false,
+                                "errors" : ["error: #deserializeJSON(local.response.fileContent)["error"]["message"]#"],
+                                "metaData" : local.response,
+                                "tracking" : {} };
+                }
+                //Check to see if we sent invalid credentials
+                if(local.response.fileContent.find("Invalid Credentials. Make sure you have given the correct access token"))
+                {
+                    //This error will be triggered when we send a bad access token. We try to use the refresh token to get a new bearer token.
+                    //Send a request to generate a new bearer token and refresh token with a refresh token
+                    local.tokenService = new http();
+                    local.tokenService.setMethod("POST");
+                    local.tokenService.setUrl("https://api.ltl.xpo.com/token");
+                    local.tokenService.addParam(type="header", name="Authorization", value=this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"]);
+                    local.requestBody = "grant_type=password&username=#variables.XPOLogisticsUserId#&password=#variables.XPOLogisticsPassword#";
+                    local.tokenService.addParam(type="body", name="body", value=local.requestBody);
+                    local.tokenResponse = local.tokenService.send().getPrefix();
+                    writeDump(local.tokenResponse);
+                    // //Get the response from the bearer token refresh request, storing the bearer and refresh tokens
+                    // local.responseContent = deserializeJSON(local.tokenResponse["filecontent"]);
+                    // this.XPOLogisticsTokenStruct["XPOLogisticsBearerToken"] = local.responseContent["access_token"];
+                    // this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"] = local.responseContent["refresh_token"];
+                    // //Send another request
+                    // local.httpService.clearParams()
+                    // local.httpService.addParam(type="header", name="Authorization", value="Bearer " & this.XPOLogisticsTokenStruct["XPOLogisticsBearerToken"]);
+                    // local.response = local.httpService.send().getPrefix();
+                    // local.responseContentXML = xmlParse(local.response["fileContent"]);
+                    // writeOutput("second try after sending refresh request");
+                    // writeDump(local.responseContentXML);
+                }
+                else
+                {
+                    //If we receive another bad status code from the API, we return an error
+                    return {    "success" : false,
+                                "errors" : ["error: API returned status code #local.response.statusCode#"],
+                                "metaData" : local.response,
+                                "tracking" : {} };
+                }
             }
             else
             {
-                //Send a request to generate a new bearer token and refresh token with an access token
-                local.tokenService = new http();
-                local.tokenService.setMethod("POST");
-                local.tokenService.setUrl("https://api.ltl.xpo.com/token");
-                local.tokenService.addParam(type="header", name="Authorization", value=variables.XPOLogisticsAccessToken);
-                local.requestBody = "grant_type=password&username=#variables.XPOLogisticsUserId#&password=#variables.XPOLogisticsPassword#";
-                local.tokenService.addParam(type="body", name="body", value=local.requestBody);
-                local.tokenResponse = local.tokenService.send().getPrefix();
+                break;
             }
         }
-
-        /* Send the request to the XPO Logistics API */
-        local.response = local.httpService.send().getPrefix();
-        writeDump(local.response);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ///////////*            Account for possible errors          *////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        //Check status code, first of all
-        if(badResponseStatus(local.response))
-        {
-            //If we receive a bad status code from the API, we return an error
-            return {"success" : false,
-                    "errors" : ["error: API returned status code #local.response.statusCode#"],
-                    "metaData" : local.response,
-                    "tracking" : {}
-                }
-        }
-        //TODO
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -829,29 +878,44 @@ component
             local.responseStruct["metadata"] = local.response;
             local.responseStruct["tracking"] = deserializeJson(local.response.filecontent);
             return local.responseStruct;
-        }   
+        }
         else if(arguments.format == "json")
         {
             local.responseStruct["metadata"] = local.response;
             local.responseStruct["tracking"] = local.response.filecontent;
             return local.responseStruct;
-        }   
+        }
         else if(arguments.format == "xml")
         {
             local.responseStruct["metadata"] = local.response;
-            local.responseStruct["tracking"] = formatter.JSONtoXML(local.response.filecontent);
+            local.responseStruct["tracking"] = formatter.convertJSONtoXML(local.response.filecontent);
             return local.responseStruct;
-        }  
+        }
         else
         {
-            return {"error" : "The service you requested to fetch shipping information from was not found or is unsupported"};
-        }   
+            return {"error" : "The format you requested to return shipping information in was not found or is unsupported for XPO Logistics in DOG"};
+        }
+    }
+
+
+    /**
+     * Given an uber freight tracking number, makes a request to the API to return
+     * tracking information.
+     *
+     * @shipment The tracking number of the shipment
+     * @format The format with which to return the API response.
+     */
+    public struct function fetchUberFreight(required string shipment, string format = "standard")
+    {
+        //TODO
+
+        return {};
     }
 
 
     /**
      * The dog fetches the shipping information for a shipment and a service
-     * specified within its arguments. It returns the shipping information in the 
+     * specified within its arguments. It returns the shipping information in the
      * specified format as well!
      * 
      * @shipment The tracking number/id of the shipment to find information about
@@ -949,12 +1013,12 @@ component
         ///////////////////////////////////////////////////////////////////////////////////////////////
         else if(arguments.service == "xpo logistics" || arguments.service == "xpo")
         {
-            //return fetchXPOLogistics(arguments.shipment, arguments.format);
-            return { "success" : false,
-                     "errors" : ["This API client is currently under construction and unable to be used. Sorry about that!"],
-                     "metaData" : {},
-                     "tracking" : {}
-                    };
+            return fetchXPOLogistics(arguments.shipment, arguments.format);
+            // return { "success" : false,
+            //          "errors" : ["This API client is currently under construction and unable to be used. Sorry about that!"],
+            //          "metaData" : {},
+            //          "tracking" : {}
+            //         };
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////////////

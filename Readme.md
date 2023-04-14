@@ -28,10 +28,11 @@ DOG can provide tracking information from the following services:
 
 -YRC Freight
 
+-XPO Logistics (Still need to do some refactoring of token retrieval, but operational)
 
 
-VERSION 0.5.2
-	-API clients still under construction: R+L Carriers, Aftership, XPO Logistics
+VERSION 0.6.0
+	-API clients still under construction: R+L Carriers, Aftership, TQL, Uber Freight
 
 
 
