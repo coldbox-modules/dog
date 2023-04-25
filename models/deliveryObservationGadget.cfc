@@ -783,8 +783,8 @@ component
         //this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"] = "458f8b39-5c5e-3a7a-897c-debfe3b79349fw";
 
         //Check to see if we need to get a bearer token to make some calls with XPO Logistics
-        //if(!this.XPOLogisticsTokenStruct.keyExists("XPOLogisticsBearerToken") || !this.XPOLogisticsTokenStruct.keyExists("XPOLogisticsRefreshToken"))
-        //{
+        if(!this.XPOLogisticsTokenStruct.keyExists("XPOLogisticsBearerToken") || !this.XPOLogisticsTokenStruct.keyExists("XPOLogisticsRefreshToken"))
+        {
             //If the bearer/refresh token doesn't exist, we acquire one here
             //Send a request to generate a new bearer token and refresh token with an access token
             //This is usually done on the first call to the API, where no information regarding XPO logistics exists on the server
@@ -799,7 +799,7 @@ component
             local.responseContent = deserializeJSON(local.tokenResponse["filecontent"]);
             this.XPOLogisticsTokenStruct["XPOLogisticsBearerToken"] = local.responseContent["access_token"];
             this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"] = local.responseContent["refresh_token"];
-        //}
+        }
 
         //Try to send a request and see if we get an expired token error.
         while(true) //We loop here so we can try to send a request until we get no errors from potentially expired tokens
@@ -824,31 +824,26 @@ component
                                 "errors" : ["error: #deserializeJSON(local.response.fileContent)["error"]["message"]#"],
                                 "metaData" : local.response,
                                 "tracking" : {} };
+                    break;
                 }
                 //Check to see if we sent invalid credentials
-                if(local.response.fileContent.find("Invalid Credentials. Make sure you have given the correct access token"))
+                if(local.response.fileContent.find("Persisted access token data not found"))
                 {
                     //This error will be triggered when we send a bad access token. We try to use the refresh token to get a new bearer token.
                     //Send a request to generate a new bearer token and refresh token with a refresh token
-                    local.tokenService = new http();
-                    local.tokenService.setMethod("POST");
-                    local.tokenService.setUrl("https://api.ltl.xpo.com/token");
-                    local.tokenService.addParam(type="header", name="Authorization", value=this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"]);
-                    local.requestBody = "grant_type=password&username=#variables.XPOLogisticsUserId#&password=#variables.XPOLogisticsPassword#";
-                    local.tokenService.addParam(type="body", name="body", value=local.requestBody);
-                    local.tokenResponse = local.tokenService.send().getPrefix();
-                    writeDump(local.tokenResponse);
-                    // //Get the response from the bearer token refresh request, storing the bearer and refresh tokens
-                    // local.responseContent = deserializeJSON(local.tokenResponse["filecontent"]);
-                    // this.XPOLogisticsTokenStruct["XPOLogisticsBearerToken"] = local.responseContent["access_token"];
-                    // this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"] = local.responseContent["refresh_token"];
-                    // //Send another request
-                    // local.httpService.clearParams()
-                    // local.httpService.addParam(type="header", name="Authorization", value="Bearer " & this.XPOLogisticsTokenStruct["XPOLogisticsBearerToken"]);
-                    // local.response = local.httpService.send().getPrefix();
-                    // local.responseContentXML = xmlParse(local.response["fileContent"]);
-                    // writeOutput("second try after sending refresh request");
-                    // writeDump(local.responseContentXML);
+                    local.refreshTokenService = new http();
+                    local.refreshTokenService.setMethod("POST");
+                    local.refreshTokenService.setUrl("https://api.ltl.xpo.com/token");
+                    local.refreshTokenService.addParam(type="header", name="Authorization", value=variables.XPOLogisticsAccessToken);
+                    local.requestBody = "grant_type=refresh_token&refresh_token=#this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"]#";
+                    local.refreshTokenService.addParam(type="body", name="body", value=local.requestBody);
+                    local.refreshTokenResponse = local.refreshTokenService.send().getPrefix();
+                    //Get the response from the bearer token refresh request, storing the bearer and refresh tokens
+                    local.responseContent = deserializeJSON(local.tokenResponse["filecontent"]);
+                    this.XPOLogisticsTokenStruct["XPOLogisticsBearerToken"] = local.responseContent["access_token"];
+                    this.XPOLogisticsTokenStruct["XPOLogisticsRefreshToken"] = local.responseContent["refresh_token"];
+                    //Get ready to send another request
+                    local.httpService.clearParams();
                 }
                 else
                 {
@@ -857,6 +852,7 @@ component
                                 "errors" : ["error: API returned status code #local.response.statusCode#"],
                                 "metaData" : local.response,
                                 "tracking" : {} };
+                    break;
                 }
             }
             else
