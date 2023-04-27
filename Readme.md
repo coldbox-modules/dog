@@ -32,7 +32,7 @@ DOG can provide tracking information from the following services:
 
 
 VERSION 0.6.1
-	-API clients still under construction: R+L Carriers, Aftership, TQL, Uber Freight
+	-API clients still under construction: R+L Carriers, Aftership, TQL
 
 
 
