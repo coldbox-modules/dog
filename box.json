@@ -16,10 +16,11 @@
         "tracking"
     ],
     "dependencies":{
-        "xmlTool":"^1.0.0"
+        "xmlTool":"^1.0.0",
+        "jsoup":"jar:https://repo1.maven.org/maven2/org/jsoup/jsoup/1.14.3/jsoup-1.14.3.jar"
     },
     "installPaths":{
-        "dog":"modules",
-        "xmlTool":"modules/xmlTool/"
+        "xmlTool":"modules/xmlTool/",
+        "jsoup":"lib/jsoup/"
     }
 }
