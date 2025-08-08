@@ -28,5 +28,9 @@
     "installPaths":{
         "xmlTool":"modules/xmlTool/",
         "jsoup":"lib/jsoup/"
-    }
+    },
+    "scripts":{
+        "onRelease":"publish",
+        "postPublish":"!git push --follow-tags"
+    },
 }
