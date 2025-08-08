@@ -95,7 +95,7 @@ component {
 		string format      = "standard",
 		string carrierCode = "FDXG"
 	){
-		local.httpService = new http();
+		local.httpService = new HTTPShim();
 
 		/* Set attributes using implicit setters */
 		local.httpService.setMethod( "post" );
@@ -184,20 +184,20 @@ component {
 		local.responseXML                 = xmlParse( local.response.fileContent );
 		local.trackingRetrieved           = xmlSearch(
 			local.responseXML,
-			"//*[name()='TrackReply']/*[name()='HighestSeverity']"
+			"//*[local-name()='TrackReply']/*[local-name()='HighestSeverity']"
 		);
 		if ( local.trackingRetrieved[ 1 ].xmlText == "SUCCESS" ) {
 			// If we receive a success message, let's make sure of some other things to be absolutely certain we have retrieved the correct tracking information
 			local.trackingDetails = xmlSearch(
 				local.responseXML,
-				"//*[name()='TrackDetails']/*[name()='Notification']/*[name()='Severity']"
+				"//*[local-name()='TrackDetails']/*[local-name()='Notification']/*[local-name()='Severity']"
 			);
 			if ( local.trackingDetails[ 1 ].xmlText != "SUCCESS" ) {
 				// There was a 'soft-error' in trying to retrieve the tracking information. One known cause of this is using the wrong carrier code for your package
 				local.responseStruct[ "errors" ].append(
 					xmlSearch(
 						local.responseXML,
-						"//*[name()='TrackDetails']/*[name()='Notification']/*[name()='Message']"
+						"//*[local-name()='TrackDetails']/*[local-name()='Notification']/*[local-name()='Message']"
 					)[ 1 ].xmlText
 				);
 				local.responseStruct[ "success" ] = false;
@@ -244,7 +244,7 @@ component {
 	 * @return The shipment information
 	 */
 	public struct function fetchUPS( required string shipment, string format = "standard" ){
-		local.httpService = new http();
+		local.httpService = new HTTPShim();
 
 		/* Set attributes using implicit setters */
 		local.httpService.setMethod( "get" );
@@ -361,7 +361,7 @@ component {
 	 *
 	 */
 	public struct function fetchDaytonFreight( required string shipment, string format = "standard" ){
-		local.httpService = new http();
+		local.httpService = new HTTPShim();
 
 		/* Set attributes using implicit setters */
 		local.httpService.setMethod( "get" );
@@ -470,7 +470,7 @@ component {
 	 * @return The tracking information of the shipment
 	 */
 	public struct function fetchHolland( required string shipment, string format = "standard" ){
-		local.httpService = new http();
+		local.httpService = new HTTPShim();
 
 		/* Set attributes using implicit setters */
 		local.httpService.setMethod( "get" );
@@ -549,7 +549,7 @@ component {
 	 * @return The tracking information of the shipment
 	 */
 	public struct function fetchYRC( required string shipment, string format = "standard" ){
-		local.httpService = new http();
+		local.httpService = new HTTPShim();
 
 		/* Set attributes using implicit setters */
 		local.httpService.setMethod( "post" );
@@ -682,7 +682,7 @@ component {
 	 * @format  
 	 */
 	private struct function fetchAftership( required string shipment, string format = "standard" ){
-		local.httpService = new http();
+		local.httpService = new HTTPShim();
 
 		/* Set attributes using implicit setters */
 		local.httpService.setMethod( "get" );
@@ -760,7 +760,7 @@ component {
 	 * @return The tracking information of the shipment
 	 */
 	public struct function fetchXPOLogistics( required string shipment, string format = "standard" ){
-		local.httpService = new http();
+		local.httpService = new HTTPShim();
 
 		/* Set attributes using implicit setters */
 		local.httpService.setMethod( "GET" );
@@ -777,7 +777,7 @@ component {
 			// If the bearer/refresh token doesn't exist, we acquire one here
 			// Send a request to generate a new bearer token and refresh token with an access token
 			// This is usually done on the first call to the API, where no information regarding XPO logistics exists on the server
-			local.tokenService = new http();
+			local.tokenService = new HTTPShim();
 			local.tokenService.setMethod( "POST" );
 			local.tokenService.setUrl( "https://api.ltl.xpo.com/token" );
 			local.tokenService.addParam(
@@ -794,6 +794,16 @@ component {
 			local.tokenResponse                                        = local.tokenService.send().getPrefix();
 			// Get the response from the bearer token creation request, storing the bearer and refresh tokens
 			local.responseContent                                      = deserializeJSON( local.tokenResponse[ "filecontent" ] );
+			if( responseContent.keyExists( "error" ) && len( local.responseContent[ "error" ] ) > 0 ) {
+				return {
+					"success" : false,
+					"errors"  : [
+						"error": responseContent.error & " " & (responseContent.error_description ?: "")
+					],
+					"metaData" : {},
+					"tracking" : {}
+				};
+			}
 			this.XPOLogisticsTokenStruct[ "XPOLogisticsBearerToken" ]  = local.responseContent[ "access_token" ];
 			this.XPOLogisticsTokenStruct[ "XPOLogisticsRefreshToken" ] = local.responseContent[ "refresh_token" ];
 		}
@@ -834,7 +844,7 @@ component {
 				if ( local.response.fileContent.find( "Persisted access token data not found" ) ) {
 					// This error will be triggered when we send a bad access token. We try to use the refresh token to get a new bearer token.
 					// Send a request to generate a new bearer token and refresh token with a refresh token
-					local.refreshTokenService = new http();
+					local.refreshTokenService = new HTTPShim();
 					local.refreshTokenService.setMethod( "POST" );
 					local.refreshTokenService.setUrl( "https://api.ltl.xpo.com/token" );
 					local.refreshTokenService.addParam(

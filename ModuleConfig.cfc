@@ -13,18 +13,18 @@ component {
 	function configure(){
 		// Module Settings
 		settings = {
-			fedexApiKey             : "insertYourCredentialsHere",
-			fedexPassword           : "insertYourCredentialsHere",
-			fedexAccountNumber      : "insertYourCredentialsHere",
-			fedexMeterNumber        : "insertYourCredentialsHere",
-			upsApiKey               : "insertYourCredentialsHere",
-			upsUsername             : "insertYourCredentialsHere",
-			upsPassword             : "insertYourCredentialsHere",
-			aftershipApiKey         : "insertYourCredentialsHere",
-			daytonFreightBasicAuth  : "insertYourCredentialsHere",
-			XPOLogisticsAccessToken : "insertYourCredentialsHere",
-			XPOLogisticsUserId      : "insertYourCredentialsHere",
-			XPOLogisticsPassword    : "insertYourCredentialsHere"
+			fedexApiKey             : "",
+			fedexPassword           : "",
+			fedexAccountNumber      : "",
+			fedexMeterNumber        : "",
+			upsApiKey               : "",
+			upsUsername             : "",
+			upsPassword             : "",
+			aftershipApiKey         : "",
+			daytonFreightBasicAuth  : "",
+			XPOLogisticsAccessToken : "",
+			XPOLogisticsUserId      : "",
+			XPOLogisticsPassword    : ""
 		};
 	}
 
@@ -33,7 +33,8 @@ component {
 			.map( "dog@deliveryObservationGadget" )
 			.to( "#moduleMapping#.models.deliveryObservationGadget" )
 			.asSingleton()
-		binder.mapDirectory( packagePath = "#moduleMapping#", namespace = "@deliveryObservationGadget" );
+
+		binder.mapDirectory( packagePath = "#moduleMapping.replace('/','.', 'all').listChangeDelims('.','.')#", namespace = "@deliveryObservationGadget" );
 	}
 
 }

@@ -1,0 +1,6 @@
+{
+    "app":{
+        "cfengine":"lucee"
+    },
+    "name":"dog_lucee"
+}

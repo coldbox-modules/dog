@@ -1,0 +1,10 @@
+{
+    "app":{
+        "cfengine":"adobe"
+    },
+    "name":"dog_adobe",
+    "scripts" : {
+        "onServerInitialInstall" : "cfpm install debugger"
+    }
+
+}

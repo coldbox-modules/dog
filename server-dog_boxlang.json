@@ -1,0 +1,12 @@
+{
+    "app":{
+        "cfengine":"boxlang"
+    },
+    "name":"dog_boxlang",
+    "scripts":{
+        "onServerInitialInstall":"install bx-compat-cfml"
+    },
+    "jvm":{
+        "JavaVersion":"openjdk21"
+    }
+}
