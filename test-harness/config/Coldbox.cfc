@@ -73,6 +73,7 @@
 				fedexPassword           : getSystemSetting( "fedexPassword", "" ),
 				fedexAccountNumber      : getSystemSetting( "fedexAccountNumber", "" ),
 				fedexMeterNumber        : getSystemSetting( "fedexMeterNumber", "" ),
+				fedexUseSandbox         : getSystemSetting( "fedexUseSandbox", "false" ),
 				upsApiKey               : getSystemSetting( "upsApiKey", "" ),
 				upsUsername             : getSystemSetting( "upsUsername", "" ),
 				upsPassword             : getSystemSetting( "upsPassword", "" ),

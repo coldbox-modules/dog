@@ -19,6 +19,7 @@ component {
 	property name="fedexPassword"      inject="coldbox:setting:fedexPassword@dog";
 	property name="fedexAccountNumber" inject="coldbox:setting:fedexAccountNumber@dog";
 	property name="fedexMeterNumber"   inject="coldbox:setting:fedexMeterNumber@dog";
+	property name="fedexUseSandbox"	   inject="coldbox:setting:fedexUseSandbox@dog";
 
 	// UPS Information
 	property name="upsApiKey"   inject="coldbox:setting:upsApiKey@dog";
@@ -100,7 +101,11 @@ component {
 		/* Set attributes using implicit setters */
 		local.httpService.setMethod( "post" );
 		local.httpService.setCharset( "utf-8" );
-		local.httpService.setUrl( "https://ws.fedex.com:443/web-services/track" ); // Endpoint for FedEx API (port 433 must be opened for bi-directional communication on the firewall)
+		if( fedexUseSandbox ) {
+			local.httpService.setUrl( "https://wsbeta.fedex.com:443/web-services/track" );
+		} else {
+			local.httpService.setUrl( "https://ws.fedex.com:443/web-services/track" );
+		}
 
 		/* Create SOAP format API request */
 		local.fileContent =

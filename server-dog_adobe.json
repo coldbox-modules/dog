@@ -3,8 +3,7 @@
         "cfengine":"adobe"
     },
     "name":"dog_adobe",
-    "scripts" : {
-        "onServerInitialInstall" : "cfpm install debugger"
+    "scripts":{
+        "onServerInitialInstall":"cfpm install debugger"
     }
-
 }

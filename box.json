@@ -22,7 +22,7 @@
     "ignore":[
         "**/.*",
         "test-harness",
-        "*/.md",
+        "*.md",
         "server-*.json"
     ],
     "installPaths":{
