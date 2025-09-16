@@ -11,21 +11,38 @@ component {
 	 * Module Config
 	 */
 	function configure(){
-		// Module Settings
 		settings = {
-			fedexApiKey             : "",
-			fedexPassword           : "",
-			fedexAccountNumber      : "",
-			fedexMeterNumber        : "",
-			upsApiKey               : "",
-			upsUsername             : "",
-			upsPassword             : "",
-			aftershipApiKey         : "",
-			daytonFreightBasicAuth  : "",
-			XPOLogisticsAccessToken : "",
-			XPOLogisticsUserId      : "",
-			XPOLogisticsPassword    : ""
-		};
+			// Fedex Information
+			fedexApiKey : '',
+			fedexSecretKey : '',
+			// Legacy SOAP credentials, not used with REST API
+			fedexPassword : '',
+			fedexAccountNumber : '',
+			fedexMeterNumber : '',
+			fedexUseSandbox : '',
+
+			// UPS Information
+			upsApiKey : '',
+			upsUsername : '',
+			upsPassword : '',
+
+			// USPS Information
+			uspsUserId : '',
+			uspsPassword : '',
+
+			// Dayton Freight information
+			daytonFreightBasicAuth : '',
+
+			// RLC information
+
+			// Aftership Information (Tazmanian Freight)
+			aftershipApiKey : '',
+
+			// XPO Logistics
+			XPOLogisticsAccessToken : '',
+			XPOLogisticsUserId : '',
+			XPOLogisticsPassword : ''
+		}
 	}
 
 	function onLoad(){

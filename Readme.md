@@ -98,15 +98,41 @@ To fetch tracking information, simply call the fetch method:
 trackingInformation = dog.fetch(required string service, required string shipment, string format);
 ```
 
+### Configuration
+
+Configure the settings for the APIs you wish to use in your `/config/Coldbox.cfc` file inside the `configure()` method under module setting struct.
+
+```
+moduleSettings = {
+	DOG = {
+		fedexApiKey             : getSystemSetting( "fedexApiKey", "" ),
+		fedexPassword           : getSystemSetting( "fedexPassword", "" ),
+		fedexSecretKey          : getSystemSetting( "fedexSecretKey", "" ),
+		fedexAccountNumber      : getSystemSetting( "fedexAccountNumber", "" ),
+		fedexMeterNumber        : getSystemSetting( "fedexMeterNumber", "" ),
+		fedexUseSandbox         : getSystemSetting( "fedexUseSandbox", "false" ),
+		upsApiKey               : getSystemSetting( "upsApiKey", "" ),
+		upsUsername             : getSystemSetting( "upsUsername", "" ),
+		upsPassword             : getSystemSetting( "upsPassword", "" ),
+		aftershipApiKey         : getSystemSetting( "aftershipApiKey", "" ),
+		daytonFreightBasicAuth  : getSystemSetting( "daytonFreightBasicAuth", "" ),
+		XPOLogisticsAccessToken : getSystemSetting( "XPOLogisticsAccessToken", "" ),
+		XPOLogisticsUserId      : getSystemSetting( "XPOLogisticsUserId", "" ),
+		XPOLogisticsPassword    : getSystemSetting( "XPOLogisticsPassword", "" ),
+		uspsUserId              : getSystemSetting( "uspsUserId", "" ),
+		uspsPassword            : getSystemSetting( "uspsPassword", "" )
+	}
+};
+```
+
+The example above shows all possible settings and pulls them from environment variables.  You can also hard-code the values right in the file and only supply the ones you need (they are all optional).
 
 ### Arguments for fetch()
 
 @service The name of shipping service you want to track a package from. The following shipping services are supported on dog:
 
-		"fedex ground"
-		
-		"fedex freight ltl"
-		
+		"fedex"
+				
 		"ups ground"
 		
 		"dayton freight"
@@ -205,21 +231,15 @@ Note well that you may also directly access the fetch functions for certain APIs
 do not wish to use the general fetch function. These are listed below:
 
 ```
-fetchFedex(required string shipment, string format="standard", string carrierCode="FDXG")
+fetchFedex(required string shipment, string format="standard" )
 ```
-The carrier code for fetchFedex() specifies what type of FedEx service is being used for the
-shipment. Valid carrier codes are listed below:
 
-    "FDXG" : FedEx Ground Shipping
-    
-    "FXFR" : FedEx Freight
-    
-    "FDXE" : FedEx Express
-    
-    "FDXS" : FedEx Smartpost
-    
-    "FDCC" : FedEx Custom Critical
-    
+Note, the Fedex REST API is now used as of version 2.0.0.  If you want to call the deprecated SOAP API, use the `fetchFedexSOAP()` method.
+
+```
+fetchFedexSOAP(required string shipment, string format="standard", string carrierCode="FDXG")
+```
+
 
 ```
 fetchUPS(required string shipment, string format="standard)

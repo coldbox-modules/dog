@@ -71,6 +71,7 @@
 			DOG = {
 				fedexApiKey             : getSystemSetting( "fedexApiKey", "" ),
 				fedexPassword           : getSystemSetting( "fedexPassword", "" ),
+				fedexSecretKey          : getSystemSetting( "fedexSecretKey", "" ),
 				fedexAccountNumber      : getSystemSetting( "fedexAccountNumber", "" ),
 				fedexMeterNumber        : getSystemSetting( "fedexMeterNumber", "" ),
 				fedexUseSandbox         : getSystemSetting( "fedexUseSandbox", "false" ),
@@ -84,7 +85,6 @@
 				XPOLogisticsPassword    : getSystemSetting( "XPOLogisticsPassword", "" ),
 				uspsUserId              : getSystemSetting( "uspsUserId", "" ),
 				uspsPassword            : getSystemSetting( "uspsPassword", "" )
-
 			}
 		};
 

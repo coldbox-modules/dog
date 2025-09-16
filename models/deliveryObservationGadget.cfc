@@ -13,35 +13,10 @@ component {
 
 	// Other models used
 	property name="formatter" inject="formatter@xmlTool";
-
-	// Fedex Information
-	property name="fedexAPIKey"        inject="coldbox:setting:fedexApiKey@dog";
-	property name="fedexPassword"      inject="coldbox:setting:fedexPassword@dog";
-	property name="fedexAccountNumber" inject="coldbox:setting:fedexAccountNumber@dog";
-	property name="fedexMeterNumber"   inject="coldbox:setting:fedexMeterNumber@dog";
-	property name="fedexUseSandbox"	   inject="coldbox:setting:fedexUseSandbox@dog";
-
-	// UPS Information
-	property name="upsApiKey"   inject="coldbox:setting:upsApiKey@dog";
-	property name="upsUsername" inject="coldbox:setting:upsUsername@dog";
-	property name="upsPassword" inject="coldbox:setting:upsPassword@dog";
-
-	// USPS Information
-	property name="uspsUserId"   inject="coldbox:setting:uspsUserId@dog";
-	property name="uspsPassword" inject="coldbox:setting:uspsPassword@dog";
-
-	// Dayton Freight information
-	property name="daytonFreightBasicAuth" inject="coldbox:setting:daytonFreightBasicAuth@dog";
-
-	// RLC information
-
-	// Aftership Information (Tazmanian Freight)
-	property name="aftershipApiKey" inject="coldbox:setting:aftershipApiKey@dog";
-
-	// XPO Logistics
-	property name="XPOLogisticsAccessToken" inject="coldbox:setting:XPOLogisticsAccessToken@dog";
-	property name="XPOLogisticsUserId"      inject="coldbox:setting:XPOLogisticsUserId@dog";
-	property name="XPOLogisticsPassword"    inject="coldbox:setting:XPOLogisticsPassword@dog";
+	
+	// Settings
+	property name="settings" inject="coldbox:modulesettings:dog";
+	property name="coldboxSettings" inject="coldbox:coldboxSettings";
 
 
 	// Default constructor
@@ -49,7 +24,40 @@ component {
 		// Holds the bearer and refresh tokens used with the XPO Logistics API
 		this.XPOLogisticsTokenStruct = {};
 
+		// Holds the bearer and refresh tokens used with the Fedex Logistics API
+		this.FedexTokenStruct = {};
+
 		return this;
+	}
+
+	function onDIComplete() {
+		
+		// For backwards compat, mix in any coldbox settings that may have been set
+		var possibleSettingNames = [
+			"fedexApiKey",
+			"fedexPassword",
+			"fedexAccountNumber",
+			"fedexMeterNumber",
+			"fedexUseSandbox",
+			"upsApiKey",
+			"upsUsername",
+			"upsPassword",
+			"uspsUserId",
+			"uspsPassword",
+			"daytonFreightBasicAuth",
+			"aftershipApiKey",
+			"XPOLogisticsAccessToken",
+			"XPOLogisticsUserId",
+			"XPOLogisticsPassword"
+		]
+		for( var key in coldboxSettings ){
+			// If the key in ColdBox settings matches one of our module settings, has length, and we DON'T have it already declared as a module setting
+			if( arrayContains( possibleSettingNames, key ) && len( coldboxSettings[ key ] ) && !len( settings[ key ] ?: '' ) ){
+				// If the key exists in the possible setting names, mix it in
+				settings[ key ] = coldboxSettings[ key] ;
+			}
+		}
+
 	}
 
 
@@ -91,7 +99,7 @@ component {
 	 *
 	 * @return The shipment information
 	 */
-	public struct function fetchFedEx(
+	public struct function fetchFedExSOAP(
 		required string shipment,
 		string format      = "standard",
 		string carrierCode = "FDXG"
@@ -101,7 +109,7 @@ component {
 		/* Set attributes using implicit setters */
 		local.httpService.setMethod( "post" );
 		local.httpService.setCharset( "utf-8" );
-		if( fedexUseSandbox ) {
+		if( variables.settings.fedexUseSandbox ) {
 			local.httpService.setUrl( "https://wsbeta.fedex.com:443/web-services/track" );
 		} else {
 			local.httpService.setUrl( "https://ws.fedex.com:443/web-services/track" );
@@ -116,17 +124,17 @@ component {
                 <TrackRequest>
                     <WebAuthenticationDetail>
                         <ParentCredential>
-                            <Key>#variables.fedexAPIKey#</Key>
-                            <Password>#variables.fedexPassword#</Password>
+                            <Key>#variables.settings.fedexAPIKey#</Key>
+                            <Password>#variables.settings.fedexPassword#</Password>
                         </ParentCredential>
                         <UserCredential>
-                            <Key>#variables.fedexAPIKey#</Key>
-                            <Password>#variables.fedexPassword#</Password>
+                            <Key>#variables.settings.fedexAPIKey#</Key>
+                            <Password>#variables.settings.fedexPassword#</Password>
                         </UserCredential>
                     </WebAuthenticationDetail>
                     <ClientDetail>
-                        <AccountNumber>#variables.fedexAccountNumber#</AccountNumber>
-                        <MeterNumber>#variables.fedexMeterNumber#</MeterNumber>
+                        <AccountNumber>#variables.settings.fedexAccountNumber#</AccountNumber>
+                        <MeterNumber>#variables.settings.fedexMeterNumber#</MeterNumber>
                     </ClientDetail>
                     <TransactionDetail>
                         <CustomerTransactionId>Track By Number_v20</CustomerTransactionId>
@@ -236,6 +244,262 @@ component {
 			return { "error" : "Unknown response format specified" }
 		}
 	}
+	
+	/**
+	* Given a FedEx tracking number, returns the information of the shipment in the desired format.
+	* 
+	* REST API version - replaces SOAP implementation
+	*
+	* @shipment    The tracking number of a shipment
+	* @format      The format by which we will return the tracking information to the user:
+	*              -standard: The raw API response contained within a struct
+	*              -structure: The API response data formatted as a struct along with the raw data within a struct
+	*              -xml: The API response data formatted in XML along with the raw data within a struct
+	*              -json: The API response data formatted in JSON along with the raw data within a struct
+	*
+	* @return The shipment information
+	*/
+	public struct function fetchFedEx(
+		required string shipment,
+		string format = "standard"
+	) {
+		
+		// Step 1: Get OAuth token if not cached or expired
+		local.accessToken = getOrRefreshAccessToken();
+		if (!local.accessToken.success) {
+			return {
+				"success": false,
+				"errors": ["Failed to obtain access token: " & local.accessToken.error],
+				"metaData": {},
+				"tracking": {}
+			};
+		}
+
+		// Step 2: Make tracking request
+		local.httpService = new HTTPShim();
+		local.httpService.setMethod("post");
+		local.httpService.setCharset("utf-8");
+		
+		// REST API endpoints
+		if (variables.settings.fedexUseSandbox) {
+			local.httpService.setUrl("https://apis-sandbox.fedex.com/track/v1/trackingnumbers");
+		} else {
+			local.httpService.setUrl("https://apis.fedex.com/track/v1/trackingnumbers");
+		}
+		
+		// Set headers for REST API
+		local.httpService.addParam(
+			type = "header",
+			name = "Authorization",
+			value = "Bearer " & local.accessToken.token
+		);
+		local.httpService.addParam(
+			type = "header", 
+			name = "Content-Type",
+			value = "application/json"
+		);
+		local.httpService.addParam(
+			type = "header",
+			name = "X-locale",
+			value = "en_US"
+		);
+		
+		// Create JSON request body (much simpler than SOAP XML)
+		local.requestBody = {
+			"includeDetailedScans": true,
+			"trackingInfo": [
+				{
+					"trackingNumberInfo": {
+						"trackingNumber": arguments.shipment
+					}
+				}
+			]
+		};
+		
+		// Convert to JSON string
+		local.jsonRequest = serializeJSON(local.requestBody);
+		
+		// Add request body
+		local.httpService.addParam(
+			type = "body",
+			name = "json_request", 
+			value = local.jsonRequest
+		);
+		
+		// Send the request
+		local.response = local.httpService.send().getPrefix();
+		
+		// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// /////////*            Account for possible errors          *////////////////////////////////////////////////////////////////////////////////////////////////////
+		// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		// Check status code
+		if (badResponseStatus(local.response)) {
+			return {
+				"success": false,
+				"errors": ["error: API returned status code " & local.response.statusCode],
+				"metaData": local.response,
+				"tracking": {}
+			};
+		}
+		
+		local.responseStruct = {};
+		local.responseStruct["success"] = true;
+		local.responseStruct["errors"] = [];
+		
+		try {
+			// Parse JSON response (much simpler than XML parsing)
+			local.responseJSON = deserializeJSON(local.response.fileContent);
+			
+			// Check for API-level errors
+			if (structKeyExists(local.responseJSON, "errors")) {
+				local.responseStruct["success"] = false;
+				for (local.error in local.responseJSON.errors) {
+					local.responseStruct["errors"].append(local.error.message);
+				}
+			}
+			
+			// Check tracking results
+			if (structKeyExists(local.responseJSON, "output") && 
+				structKeyExists(local.responseJSON.output, "completeTrackResults") &&
+				arrayLen(local.responseJSON.output.completeTrackResults) > 0) {
+				
+				local.trackResult = local.responseJSON.output.completeTrackResults[1];
+				
+				// Check for tracking-specific errors
+				if (structKeyExists(local.trackResult, "trackResults") && 
+					arrayLen(local.trackResult.trackResults) > 0) {
+					
+					local.firstResult = local.trackResult.trackResults[1];
+					
+					// Check for error notifications in track results
+					if (structKeyExists(local.firstResult, "error")) {
+						local.responseStruct["success"] = false;
+						local.responseStruct["errors"].append(local.firstResult.error.message);
+					}
+				} else {
+					local.responseStruct["success"] = false;
+					local.responseStruct["errors"].append("No tracking results found for tracking number");
+				}
+			} else {
+				local.responseStruct["success"] = false;
+				local.responseStruct["errors"].append("Invalid response structure from FedEx API");
+			}
+			
+		} catch (any e) {
+			local.responseStruct["success"] = false;
+			local.responseStruct["errors"].append("Error parsing JSON response: " & e.message);
+		}
+		
+		// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		/* Choose a format with which to return the API's response to the user */
+		if (arguments.format == "standard") {
+			// Return the response as-is
+			return local.response;
+		} else if (arguments.format == "structure") {
+			// Return structured data
+			local.responseStruct["metaData"] = local.response;
+			local.responseStruct["tracking"] = local.responseJSON;
+			return local.responseStruct;
+		} else if (arguments.format == "xml") {
+			// Convert JSON to XML for backward compatibility
+			local.responseXML = formatter.convertJSONtoXML(local.responseJSON);
+			local.responseStruct["tracking"] = local.responseXML;
+			local.responseStruct["metaData"] = local.response;
+			return local.responseStruct;
+		} else if (arguments.format == "json") {
+			local.responseStruct["tracking"] = local.responseJSON;
+			local.responseStruct["metaData"] = local.response;
+			return local.responseStruct;
+		} else {
+			return {"error": "Unknown response format specified"};
+		}
+	}
+
+	/**
+	 * Gets or refreshes the OAuth access token for FedEx REST API
+	 * Caches token until near expiration
+	 */
+	private struct function getOrRefreshAccessToken() {
+		
+		// Check if we have a cached token that's still valid
+		if (structKeyExists(this.FedexTokenStruct, "fedexToken") && 
+			structKeyExists(this.FedexTokenStruct.fedexToken, "expires") &&
+			this.FedexTokenStruct.fedexToken.expires > now()) {
+			return {
+				"success": true,
+				"token": this.FedexTokenStruct.fedexToken.access_token
+			};
+		}
+		
+		// Get new token
+		local.httpService = new HTTPShim();
+		local.httpService.setMethod("post");
+		local.httpService.setCharset("utf-8");
+		
+		if (variables.settings.fedexUseSandbox) {
+			local.httpService.setUrl("https://apis-sandbox.fedex.com/oauth/token");
+		} else {
+			local.httpService.setUrl("https://apis.fedex.com/oauth/token");
+		}
+		
+		// Set headers
+		local.httpService.addParam(
+			type = "header",
+			name = "Content-Type", 
+			value = "application/x-www-form-urlencoded"
+		);
+		
+		// Create form data for OAuth request
+		local.formData = "grant_type=client_credentials&client_id=" & 
+						urlEncodedFormat(variables.settings.fedexAPIKey) & 
+						"&client_secret=" & urlEncodedFormat(variables.settings.fedexSecretKey);
+		
+		local.httpService.addParam(
+			type = "body",
+			name = "form_data",
+			value = local.formData
+		);
+		
+		local.response = local.httpService.send().getPrefix();
+
+		if (badResponseStatus(local.response)) {
+			return {
+				"success": false,
+				"error": "OAuth request failed with status " & local.response.statusCode
+			};
+		}
+		
+		try {
+			local.tokenResponse = deserializeJSON(local.response.fileContent);
+			
+			if (structKeyExists(local.tokenResponse, "access_token")) {
+				// Cache the token (expires in 1 hour, cache for 55 minutes to be safe)
+				this.FedexTokenStruct.fedexToken = {
+					"access_token": local.tokenResponse.access_token,
+					"expires": dateAdd("n", 55, now())
+				};
+				
+				return {
+					"success": true,
+					"token": local.tokenResponse.access_token
+				};
+			} else {
+				return {
+					"success": false,
+					"error": "No access token in OAuth response"
+				};
+			}
+			
+		} catch (any e) {
+			return {
+				"success": false, 
+				"error": "Error parsing OAuth response: " & e.message
+			};
+		}
+	}
 
 
 	/**
@@ -270,17 +534,17 @@ component {
 		local.httpService.addParam(
 			type  = "header",
 			name  = "Username",
-			value = variables.upsUsername
+			value = variables.settings.upsUsername
 		);
 		local.httpService.addParam(
 			type  = "header",
 			name  = "Password",
-			value = variables.upsPassword
+			value = variables.settings.upsPassword
 		);
 		local.httpService.addParam(
 			type  = "header",
 			name  = "AccessLicenseNumber",
-			value = variables.upsApiKey
+			value = variables.settings.upsApiKey
 		);
 		local.httpService.addParam(
 			type  = "header",
@@ -377,7 +641,7 @@ component {
 		local.httpService.addParam(
 			type  = "header",
 			name  = "Authorization",
-			value = "#variables.daytonFreightBasicAuth#"
+			value = "#variables.settings.daytonFreightBasicAuth#"
 		);
 
 		/* Send the request to the Dayton Freight API */
@@ -697,7 +961,7 @@ component {
 		local.httpService.addParam(
 			type  = "header",
 			name  = "aftership-api-key",
-			value = variables.aftershipAPIKey
+			value = variables.settings.aftershipAPIKey
 		);
 
 		/* Send the request to the API */
@@ -788,9 +1052,9 @@ component {
 			local.tokenService.addParam(
 				type  = "header",
 				name  = "Authorization",
-				value = variables.XPOLogisticsAccessToken
+				value = variables.settings.XPOLogisticsAccessToken
 			);
-			local.requestBody = "grant_type=password&username=#variables.XPOLogisticsUserId#&password=#variables.XPOLogisticsPassword#";
+			local.requestBody = "grant_type=password&username=#variables.settings.XPOLogisticsUserId#&password=#variables.settings.XPOLogisticsPassword#";
 			local.tokenService.addParam(
 				type  = "body",
 				name  = "body",
@@ -855,7 +1119,7 @@ component {
 					local.refreshTokenService.addParam(
 						type  = "header",
 						name  = "Authorization",
-						value = variables.XPOLogisticsAccessToken
+						value = variables.settings.XPOLogisticsAccessToken
 					);
 					local.requestBody = "grant_type=refresh_token&refresh_token=#this.XPOLogisticsTokenStruct[ "XPOLogisticsRefreshToken" ]#";
 					local.refreshTokenService.addParam(
@@ -946,16 +1210,9 @@ component {
 		// ////////////////////////////////////////////////////////////////////////////////////////////
 		// ///////////////////////////////*           FedEx           *////////////////////////////////
 		// ////////////////////////////////////////////////////////////////////////////////////////////
-		if ( arguments.service == "fedex ground" || arguments.service == "fedex" ) {
-			return fetchFedEx( arguments.shipment, arguments.format, "FDXG" );
-		} else if ( arguments.service == "fedex freight ltl" ) {
-			return fetchFedEx( arguments.shipment, arguments.format, "FXFR" );
-		} else if ( arguments.service == "fedex express" ) {
-			return fetchFedEx( arguments.shipment, arguments.format, "FDXE" );
-		} else if ( arguments.service == "fedex smartpost" ) {
-			return fetchFedEx( arguments.shipment, arguments.format, "FDXS" );
-		} else if ( arguments.service == "fedex custom critical" ) {
-			return fetchFedEx( arguments.shipment, arguments.format, "FDCC" );
+		var fedexTypes = "fedex ground,fedex,fedex freight ltl,fedex express,fedex smartpost,fedex custom critical";
+		if ( listFindNoCase( fedexTypes, arguments.service ) ) {
+			return fetchFedEx( arguments.shipment, arguments.format );
 		}
 
 		// /////////////////////////////////////////////////////////////////////////////////////////////
