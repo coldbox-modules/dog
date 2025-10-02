@@ -120,7 +120,11 @@ moduleSettings = {
 		XPOLogisticsUserId      : getSystemSetting( "XPOLogisticsUserId", "" ),
 		XPOLogisticsPassword    : getSystemSetting( "XPOLogisticsPassword", "" ),
 		uspsUserId              : getSystemSetting( "uspsUserId", "" ),
-		uspsPassword            : getSystemSetting( "uspsPassword", "" )
+		uspsPassword            : getSystemSetting( "uspsPassword", "" ),
+		UPSClientId				: getSystemSetting( "UPSClientId", "" ),
+		UPSClientSecret			: getSystemSetting( "UPSClientSecret", "" ),
+		UPSMerchantId			: getSystemSetting( "UPSMerchantId", "" ),
+		UPSUseSandbox			: getSystemSetting( "UPSUseSandbox", "false" )
 	}
 };
 ```
@@ -252,3 +256,5 @@ fetchAftership(required string shipment, string format="standard",  required str
 The shipper argument for fetchAftership allows you to choose which shipper you would like to get tracking information from,
 as multiple shippers use Aftership. For example, if you would like to use fetchAftership() to get tracking information on 
 a package from Tazmanian Freight, pass in the following for the shipper argument: "tazmanian freight".
+
+As of 3.0.0, the UPS implementation (`fetchFedEx()`) assumes OAuth, using client ID and client secret.  If you still want to use the `uspsUserId` and `uspsPassword` settings, then you'll need to call the `fetchUPSLegacy()` method.
