@@ -47,7 +47,7 @@
 			describe( 'UPS', function(){
 					
 				it( 'can check shipment', function(){
-					var response = getLib().fetchUPS( "123456789012", "structure" );
+					var response = getLib().fetchUPS( "1Z5338FF0107231059", "structure" );
 					
 					expect( response ).toBeStruct();
 				});

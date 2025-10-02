@@ -7,7 +7,7 @@ and API client for multiple tracking services. Using it in your own code
 looks like this:
 
 
-```
+```js
 property name="dog"     inject="deliveryObservationGadget@dog";
 trackingInformation = dog.fetch("fedex", "403934084723025", "struct");
 ```
@@ -40,7 +40,7 @@ VERSION 0.6.1
 
 To install dog, just run the following command in commandbox:
 
-```
+```js
 box install dog
 ```
 
@@ -53,7 +53,7 @@ Jsoup is used to parse HTML API responses, which some shipping providers deal in
 If you don't have a libs folder, you must add this to this part of your
 application.cfc (the one stored in the root directory of your ColdFusion server):
 
-```
+```js
 this.javaSettings = {
 		loadPaths               : [ expandPath( "insertPathToJsoup.jarHere" ) ],
 		loadColdFusionClassPath : true,
@@ -88,13 +88,13 @@ XPO Logistics: https://ltl-solutions.xpo.com/help-center/api/
 
 To use dog, simply inject it into one of your scripts with the following code:
 
-```
+```js
 property name="dog"      inject="deliveryObservationGadget@dog";
 ```
 
 To fetch tracking information, simply call the fetch method:
 
-```
+```js
 trackingInformation = dog.fetch(required string service, required string shipment, string format);
 ```
 
@@ -102,7 +102,7 @@ trackingInformation = dog.fetch(required string service, required string shipmen
 
 Configure the settings for the APIs you wish to use in your `/config/Coldbox.cfc` file inside the `configure()` method under module setting struct.
 
-```
+```js
 moduleSettings = {
 	DOG = {
 		fedexApiKey             : getSystemSetting( "fedexApiKey", "" ),
@@ -230,18 +230,18 @@ If you pass in "structure", "json", or "xml":
 Note well that you may also directly access the fetch functions for certain APIs if you
 do not wish to use the general fetch function. These are listed below:
 
-```
+```js
 fetchFedex(required string shipment, string format="standard" )
 ```
 
 Note, the Fedex REST API is now used as of version 2.0.0.  If you want to call the deprecated SOAP API, use the `fetchFedexSOAP()` method.
 
-```
+```js
 fetchFedexSOAP(required string shipment, string format="standard", string carrierCode="FDXG")
 ```
 
 
-```
+```js
 fetchUPS(required string shipment, string format="standard)
 fetchDaytonFreight(required string shipment, string format="standard")
 fetchRLC(required string shipment, string format="standard")

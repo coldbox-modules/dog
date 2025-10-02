@@ -4,7 +4,7 @@
 	function configure(){
 
 		// coldbox directives
-		coldbox = {
+		variables.coldbox = {
 			//Application Setup
 			appName 				= "Module Tester",
 
@@ -37,12 +37,12 @@
 		// environment settings, create a detectEnvironment() method to detect it yourself.
 		// create a function with the name of the environment so it can be executed if that environment is detected
 		// the value of the environment is a list of regex patterns to match the cgi.http_host.
-		environments = {
+		variables.environments = {
 			development = "localhost,127\.0\.0\.1"
 		};
 
 		// Module Directives
-		modules = {
+		variables.modules = {
 			// An array of modules names to load, empty means all of them
 			include = [],
 			// An array of modules names to NOT load, empty means none
@@ -50,11 +50,11 @@
 		};
 
 		//Register interceptors as an array, we need order
-		interceptors = [
+		variables.interceptors = [
 		];
 
 		//LogBox DSL
-		logBox = {
+		variables.logBox = {
 			// Define Appenders
 			appenders = {
 				ConsoleAppender = {
@@ -67,7 +67,7 @@
 			info = [ "coldbox.system" ]
 		};
 
-		moduleSettings = {
+		variables.moduleSettings = {
 			DOG = {
 				fedexApiKey             : getSystemSetting( "fedexApiKey", "" ),
 				fedexPassword           : getSystemSetting( "fedexPassword", "" ),
@@ -84,7 +84,11 @@
 				XPOLogisticsUserId      : getSystemSetting( "XPOLogisticsUserId", "" ),
 				XPOLogisticsPassword    : getSystemSetting( "XPOLogisticsPassword", "" ),
 				uspsUserId              : getSystemSetting( "uspsUserId", "" ),
-				uspsPassword            : getSystemSetting( "uspsPassword", "" )
+				uspsPassword            : getSystemSetting( "uspsPassword", "" ),
+				UPSClientId				: getSystemSetting( "UPSClientId", "" ),
+				UPSClientSecret			: getSystemSetting( "UPSClientSecret", "" ),
+				UPSMerchantId			: getSystemSetting( "UPSMerchantId", "" ),
+				UPSUseSandbox			: getSystemSetting( "UPSUseSandbox", "false" )
 			}
 		};
 

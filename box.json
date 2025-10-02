@@ -17,7 +17,8 @@
     ],
     "dependencies":{
         "xmlTool":"^1.0.0",
-        "jsoup":"jar:https://repo1.maven.org/maven2/org/jsoup/jsoup/1.14.3/jsoup-1.14.3.jar"
+        "jsoup":"jar:https://repo1.maven.org/maven2/org/jsoup/jsoup/1.14.3/jsoup-1.14.3.jar",
+        "bx-compat-cfml":"^1.27.1+38"
     },
     "ignore":[
         "**/.*",
@@ -27,7 +28,8 @@
     ],
     "installPaths":{
         "xmlTool":"modules/xmlTool/",
-        "jsoup":"lib/jsoup/"
+        "jsoup":"lib/jsoup/",
+        "bx-compat-cfml":"bx-compat-cfml/"
     },
     "scripts":{
         "onRelease":"publish",

@@ -27,6 +27,9 @@ component {
 		// Holds the bearer and refresh tokens used with the Fedex Logistics API
 		this.FedexTokenStruct = {};
 
+		// Holds the bearer and refresh tokens used with the UPS API
+		this.UPSTokenStruct = {};
+
 		return this;
 	}
 
@@ -72,6 +75,8 @@ component {
 	 */
 	private boolean function badResponseStatus( required struct response ){
 		if ( ( 400 <= arguments.response.status_code ) && ( 600 > arguments.response.status_code ) ) {
+			return true;
+		} else if (  arguments.response.status_code == 0 ) {
 			return true;
 		} else {
 			return false;
@@ -512,7 +517,7 @@ component {
 	 *
 	 * @return The shipment information
 	 */
-	public struct function fetchUPS( required string shipment, string format = "standard" ){
+	public struct function fetchUPSLegacy( required string shipment, string format = "standard" ){
 		local.httpService = new HTTPShim();
 
 		/* Set attributes using implicit setters */
@@ -617,6 +622,243 @@ component {
 			return local.responseStruct;
 		} else {
 			return { "errors" : "Unknown response format specified" };
+		}
+	}
+
+	private String function getUPSDomain() {
+		if (variables.settings.upsUseSandbox) {
+			return "wwwcie.ups.com";
+		} else {
+			return "onlinetools.ups.com";
+		}
+	}
+	
+	/**
+	* Given a UPS tracking number, returns the information of the shipment in the desired format.
+	* Updated to use the new OAuth 2.0 REST API
+	*
+	* @shipment The tracking number of the shipment
+	* @format   The format with which to return the tracking information
+	*
+	* @return The shipment information
+	*/
+	public struct function fetchUPS(required string shipment, string format = "standard") {
+		
+		// Step 1: Get OAuth token
+		local.accessToken = getUPSAccessToken();
+		if (!local.accessToken.success) {
+			return {
+				"success": false,
+				"errors": ["Failed to obtain UPS access token: " & local.accessToken.error],
+				"metaData": {},
+				"tracking": {}
+			};
+		}
+		
+		// Step 2: Make tracking request with new API
+		local.httpService = new HTTPShim();
+		
+		/* Set attributes using implicit setters */
+		local.httpService.setMethod("get");
+		local.httpService.setCharset("utf-8");
+		
+		// Use the new API endpoint
+		local.httpService.setUrl("https://#getUPSDomain()#/api/track/v1/details/#arguments.shipment#");
+		
+		/* Add headers for OAuth authentication */
+		local.httpService.addParam(
+			type = "header",
+			name = "Authorization",
+			value = "Bearer " & local.accessToken.token
+		);
+		local.httpService.addParam(
+			type = "header",
+			name = "transId",
+			value = createUUID() // Generate unique transaction ID
+		);
+		local.httpService.addParam(
+			type = "header",
+			name = "transactionSrc",
+			value = "TrackAPI"
+		);
+		local.httpService.addParam(
+			type = "header",
+			name = "Content-Type",
+			value = "application/json"
+		);
+		local.httpService.addParam(
+			type = "header",
+			name = "Accept",
+			value = "application/json"
+		);
+		
+		/* Send the request to the UPS API */
+		local.response = local.httpService.send().getPrefix();
+		
+		// ////////////////////////////////////////////////////////////////////////////////////////////////
+		// /////////*            Account for possible errors          */////////////////////////////////////
+		// ////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		// Check status code, first of all
+		if (badResponseStatus(local.response)) {
+			// If we receive a bad status code from the API, we return an error
+			return {
+				"success": false,
+				"errors": ["error: API returned status code #local.response.statusCode#"],
+				"metaData": local.response,
+				"tracking": {}
+			}
+		}
+		
+		local.responseStructJSON = deserializeJSON(local.response.fileContent);
+		local.responseStruct["success"] = true;
+		local.responseStruct["errors"] = [];
+		
+		// Check to see if the API response contained errors
+		if (isDefined("local.responseStructJSON.response.errors")) {
+			if (local.responseStructJSON["response"]["errors"].len() > 0) {
+				for (local.i = 1; local.i <= arrayLen(local.responseStructJSON["response"]["errors"]); local.i++) {
+					local.responseStruct["errors"].append(
+						local.responseStructJSON["response"]["errors"][local.i]["message"]
+					);
+					local.responseStruct["success"] = false;
+				}
+			}
+		}
+		
+		// ////////////////////////////////////////////////////////////////////////////////////////////////
+		// ////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		/* Choose a format with which to return the API's response to the user */
+		if (arguments.format == "standard") {
+			// No edits made to the standard response
+			return local.response;
+		} else if (arguments.format == "structure") {
+			// Return a struct and metadata within a struct
+			local.responseMetaData = local.response;
+			local.responseStruct["tracking"] = local.responseStructJSON;
+			local.responseStruct["metaData"] = local.responseMetaData;
+			return local.responseStruct;
+		} else if (arguments.format == "json") {
+			// Return a JSON formatted string and the metadata in a struct
+			local.responseMetaData = local.response;
+			local.responseStruct["tracking"] = local.response.fileContent;
+			local.responseStruct["metaData"] = local.responseMetaData;
+			return local.responseStruct;
+		} else if (arguments.format == "xml") {
+			// Return an xml document object and the metadata in a struct
+			local.responseMetaData = local.response;
+			local.responseStruct["tracking"] = formatter.convertJSONtoXML(local.response.fileContent);
+			local.responseStruct["metaData"] = local.responseMetaData;
+			return local.responseStruct;
+		} else {
+			return {"errors": "Unknown response format specified"};
+		}
+	}
+
+	/**
+	 * Gets or refreshes the OAuth access token for UPS REST API
+	 * Caches token until near expiration
+	 * 
+	 * @return Struct with success status and token or error message
+	 */
+	private struct function getUPSAccessToken() {
+		
+		// Check if we have a cached token that's still valid (with 5 minute buffer)
+		if ( structKeyExists(this.UPSTokenStruct, "upsToken") &&
+			structKeyExists(this.UPSTokenStruct.upsToken, "expires") &&
+			this.UPSTokenStruct.upsToken.expires > dateAdd("n", 5, now())) {
+			
+			return {
+				"success": true,
+				"token": this.UPSTokenStruct.upsToken.access_token
+			};
+		}
+		
+		// Get new token
+		local.httpService = new HTTPShim();
+		local.httpService.setMethod("post");
+		local.httpService.setCharset("utf-8");
+		local.httpService.setUrl("https://#getUPSDomain()#/security/v1/oauth/token");
+		
+		// Set headers for OAuth request
+		local.httpService.addParam(
+			type = "header",
+			name = "Content-Type",
+			value = "application/x-www-form-urlencoded"
+		);
+		
+		// Create Basic Auth header from Client ID and Client Secret
+		// Basic Auth = base64(clientId:clientSecret)
+		local.authString = toBase64(variables.settings.upsClientId & ":" & variables.settings.upsClientSecret);
+		local.httpService.addParam(
+			type = "header",
+			name = "Authorization",
+			value = "Basic " & local.authString
+		);
+		
+		// Add x-merchant-id header if you have one (optional but recommended)
+		if (structKeyExists(variables.settings, "upsMerchantId") && len(variables.settings.upsMerchantId)) {
+			local.httpService.addParam(
+				type = "header",
+				name = "x-merchant-id",
+				value = variables.settings.upsMerchantId
+			);
+		}
+		
+		// Create form data for OAuth request
+		local.formData = "grant_type=client_credentials";
+		
+		local.httpService.addParam(
+			type = "body",
+			value = local.formData
+		);
+		
+		try {
+			local.response = local.httpService.send().getPrefix();
+			
+			if (badResponseStatus(local.response)) {
+				return {
+					"success": false,
+					"error": "OAuth request failed with status " & local.response.statusCode & ": " & local.response.fileContent
+				};
+			}
+			
+			local.tokenResponse = deserializeJSON(local.response.fileContent);
+			
+			if (structKeyExists(local.tokenResponse, "access_token")) {
+				// Cache the token
+				// UPS tokens typically expire in 14399 seconds (about 4 hours)
+				// We'll cache for slightly less to be safe
+				local.expiresIn = structKeyExists(local.tokenResponse, "expires_in") ? 
+								local.tokenResponse.expires_in : 14399;
+				
+				// Subtract 5 minutes (300 seconds) for safety margin
+				local.cacheSeconds = local.expiresIn - 300;
+				
+				this.UPSTokenStruct.upsToken = {
+					"access_token": local.tokenResponse.access_token,
+					"expires": dateAdd("s", local.cacheSeconds, now()),
+					"token_type": local.tokenResponse.token_type
+				};
+				
+				return {
+					"success": true,
+					"token": local.tokenResponse.access_token
+				};
+			} else {
+				return {
+					"success": false,
+					"error": "No access token in OAuth response: " & local.response.fileContent
+				};
+			}
+			
+		} catch (any e) {
+			rethrow;
+			return {
+				"success": false,
+				"error": "Error during OAuth request: " & e.message
+			};
 		}
 	}
 

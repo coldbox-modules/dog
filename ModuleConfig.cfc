@@ -11,7 +11,7 @@ component {
 	 * Module Config
 	 */
 	function configure(){
-		settings = {
+		variables.settings = {
 			// Fedex Information
 			fedexApiKey : '',
 			fedexSecretKey : '',
@@ -22,9 +22,16 @@ component {
 			fedexUseSandbox : '',
 
 			// UPS Information
-			upsApiKey : '',
-			upsUsername : '',
-			upsPassword : '',
+
+			UPSClientId : '',
+			UPSClientSecret : '',
+			UPSMerchantId : '',
+			UPSUseSandbox : false,
+
+			// legacy
+			UPSApiKey : '',
+			UPSUsername : '',
+			UPSPassword : '',
 
 			// USPS Information
 			uspsUserId : '',

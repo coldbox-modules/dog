@@ -17,9 +17,7 @@ component  {
 		cfhttp( attributeCollection = variables.attributes, result="local.result" ) {
 			for( var param in variables.httpParams ) {
 				cfhttpparam(
-					type  = param.type,
-					name  = param.name,
-					value = param.value
+					attributeCollection = param
 				);
 			}
 		}
@@ -39,12 +37,16 @@ component  {
 		return this;
 	}
 
-	function addParam( required string type, required string name, required any value ) {
+	function addParam( required string type, string name, required any value ) {
 		var param = {
 			type = arguments.type,
-			name = arguments.name,
 			value = arguments.value
 		};
+		if( arguments.keyExists( "name" ) ) {
+			param.name = arguments.name;
+		} else if( !"body,xml".listFindNoCase( arguments.type ) ) {
+			throw( message = "HTTP Param type [#arguments.type#] requires a name.  Only XML and Body are exempt." );
+		}
 		arrayAppend( variables.httpParams, param );
 		return this;
 	}
