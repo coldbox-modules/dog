@@ -410,12 +410,12 @@ component {
 			return local.responseStruct;
 		} else if (arguments.format == "xml") {
 			// Convert JSON to XML for backward compatibility
-			local.responseXML = formatter.convertJSONtoXML(local.responseJSON);
+			local.responseXML = formatter.convertJSONtoXML(local.response.fileContent);
 			local.responseStruct["tracking"] = local.responseXML;
 			local.responseStruct["metaData"] = local.response;
 			return local.responseStruct;
 		} else if (arguments.format == "json") {
-			local.responseStruct["tracking"] = local.responseJSON;
+			local.responseStruct["tracking"] = local.response.fileContent;
 			local.responseStruct["metaData"] = local.response;
 			return local.responseStruct;
 		} else {
@@ -752,7 +752,7 @@ component {
 			local.responseStruct["metaData"] = local.responseMetaData;
 			return local.responseStruct;
 		} else {
-			return {"errors": "Unknown response format specified"};
+			return {"error": "Unknown response format specified"};
 		}
 	}
 
@@ -929,7 +929,7 @@ component {
 			return local.responseStruct;
 		} else if ( arguments.format == "xml" ) {
 			local.responseStruct[ "metadata" ] = local.response;
-			local.responseStruct[ "tracking" ] = formatter.JSONtoXML( local.response.filecontent );
+			local.responseStruct[ "tracking" ] = formatter.convertJSONtoXML( local.response.filecontent );
 			return local.responseStruct;
 		} else {
 			return {
@@ -1241,7 +1241,7 @@ component {
 			return local.responseStruct;
 		} else if ( arguments.format == "xml" ) {
 			local.responseStruct[ "metadata" ] = local.response;
-			local.responseStruct[ "tracking" ] = formatter.JSONtoXML( local.response.filecontent );
+			local.responseStruct[ "tracking" ] = formatter.convertJSONtoXML( local.response.filecontent );
 			return local.responseStruct;
 		} else {
 			return {
